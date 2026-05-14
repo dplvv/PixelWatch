@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.env
+.DS_Store
+coverage.xml
+htmlcov/
+
+storage/screenshots/*
+!storage/screenshots/.gitkeep
+storage/diffs/*
+!storage/diffs/.gitkeep
