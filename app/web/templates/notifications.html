@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1>Уведомления</h1>
+    <p class="page-subtitle">Лента событий по изменениям и ошибкам проверки страниц.</p>
+  </div>
+</section>
+
+<div class="card list-card">
+  {% for notification in notifications %}
+    <article class="notification-item {% if not notification.is_read %}unread{% endif %}">
+      <div>
+        <p class="notification-type">{{ notification_type_label(notification.type) }}</p>
+        <p>{{ notification.message }}</p>
+        <p class="meta">{{ format_moscow_datetime(notification.created_at) }}</p>
+      </div>
+      <div>
+        {% if not notification.is_read %}
+          <form method="post" action="{{ request.url_for('web_notification_read', notification_id=notification.id) }}">
+            <button class="btn btn-small" type="submit">Отметить как прочитанное</button>
+          </form>
+        {% else %}
+          <span class="badge">Прочитано</span>
+        {% endif %}
+      </div>
+    </article>
+  {% else %}
+    <p class="empty">Уведомлений пока нет.</p>
+  {% endfor %}
+</div>
+{% endblock %}
