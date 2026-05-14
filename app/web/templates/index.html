@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1>Визуальный мониторинг сайтов</h1>
+    <p class="page-subtitle">Отслеживайте изменения страниц и храните историю скриншотов.</p>
+  </div>
+  <div class="header-actions">
+    <a class="btn btn-primary" href="{{ request.url_for('web_monitor_form') }}">Добавить монитор</a>
+    <a class="btn" href="{{ request.url_for('web_notifications') }}">Непрочитанные: {{ unread_count }}</a>
+  </div>
+</section>
+
+<section class="card intro-card">
+  <p class="intro-title">Что умеет PixelWatch</p>
+  <p class="intro-text">Сервис автоматически делает снимки страниц, сравнивает изменения и показывает историю проверок и уведомлений.</p>
+  <div class="intro-points">
+    <span class="intro-chip">Проверки по расписанию (МСК)</span>
+    <span class="intro-chip">Визуальные diff-сравнения</span>
+    <span class="intro-chip">История и уведомления</span>
+  </div>
+</section>
+
+{% if message %}
+  <div class="notice">{{ message }}</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Название</th>
+          <th>URL</th>
+          <th>Активен</th>
+          <th>Последняя проверка</th>
+          <th>Последний статус</th>
+          <th>Последнее изменение %</th>
+          <th>Действие</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for monitor in monitors %}
+        <tr>
+          <td>{{ monitor.title }}</td>
+          <td><a href="{{ monitor.url }}" target="_blank" rel="noreferrer">{{ monitor.url }}</a></td>
+          <td>
+            {% if monitor.is_active %}
+              <span class="badge badge-success">Да</span>
+            {% else %}
+              <span class="badge">Нет</span>
+            {% endif %}
+          </td>
+          <td>
+            {{ format_moscow_datetime(monitor.last_checked_at) }}
+          </td>
+          <td>{{ monitor_status_label(monitor.last_status) }}</td>
+          <td>
+            {% if monitor.last_change_percent is not none %}
+              {{ '%.2f'|format(monitor.last_change_percent) }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            <a class="btn btn-small" href="{{ request.url_for('web_monitor_detail', monitor_id=monitor.id) }}">Открыть</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="empty">Мониторов пока нет. Добавьте первый URL.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
