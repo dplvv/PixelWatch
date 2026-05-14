@@ -8,6 +8,8 @@ __pycache__/
 .DS_Store
 coverage.xml
 htmlcov/
+celerybeat-schedule
+celerybeat-schedule.*
 
 storage/screenshots/*
 !storage/screenshots/.gitkeep
