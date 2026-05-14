@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1>Добавить монитор</h1>
+    <p class="page-subtitle">Укажите URL и интервал проверки. Первый успешный снимок станет базовым.</p>
+  </div>
+</section>
+
+<div class="card form-card">
+  {% if error %}
+    <div class="notice error">{{ error }}</div>
+  {% endif %}
+  <form method="post" action="{{ request.url_for('web_monitor_create') }}" class="form-grid">
+    <label>
+      Название
+      <input type="text" name="title" value="{{ form.title or '' }}" required maxlength="255" />
+    </label>
+
+    <label>
+      URL
+      <input type="url" name="url" value="{{ form.url or '' }}" required placeholder="https://example.com" />
+    </label>
+
+    <label>
+      Интервал проверки (минуты)
+      <input type="number" name="check_interval_minutes" value="{{ form.check_interval_minutes or 60 }}" min="1" max="10080" required />
+    </label>
+
+    <label class="checkbox-row">
+      <input type="checkbox" name="is_active" {% if form.is_active is not sameas false %}checked{% endif %} />
+      Активный монитор
+    </label>
+
+    <button type="submit" class="btn btn-primary">Создать монитор</button>
+  </form>
+</div>
+{% endblock %}
