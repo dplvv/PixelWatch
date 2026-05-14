@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelWatch</title>
+  <link rel="stylesheet" href="{{ request.url_for('static', path='styles.css') }}" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="{{ request.url_for('web_index') }}">PixelWatch</a>
+      <nav class="topnav">
+        <a class="nav-link{% if request.url.path == '/' %} is-active{% endif %}" href="{{ request.url_for('web_index') }}">Мониторы</a>
+        <a class="nav-link{% if request.url.path == '/monitors/new' %} is-active{% endif %}" href="{{ request.url_for('web_monitor_form') }}">Новый монитор</a>
+        <a class="nav-link{% if request.url.path == '/notifications' %} is-active{% endif %}" href="{{ request.url_for('web_notifications') }}">Уведомления</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
