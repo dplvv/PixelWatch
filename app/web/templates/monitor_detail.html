@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card monitor-hero-card">
+  <div class="monitor-hero-main">
+    <p class="monitor-overline">Мониторинг страницы</p>
+    <h1>{{ monitor.title }}</h1>
+    <p class="monitor-link"><a href="{{ monitor.url }}" target="_blank" rel="noreferrer">{{ monitor.url }}</a></p>
+    <div class="inline-badges">
+      <span class="badge">{{ monitor_status_label(monitor.last_status) }}</span>
+      {% if monitor.is_active %}
+        <span class="badge badge-success">Активен</span>
+      {% else %}
+        <span class="badge">Отключён</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="monitor-actions">
+    <form method="post" action="{{ request.url_for('web_monitor_check', monitor_id=monitor.id) }}">
+      <button type="submit" class="btn btn-primary">Запустить проверку</button>
+    </form>
+    <form method="post" action="{{ request.url_for('web_monitor_toggle', monitor_id=monitor.id) }}">
+      <button type="submit" class="btn">{% if monitor.is_active %}Отключить{% else %}Включить{% endif %}</button>
+    </form>
+    <form method="post" action="{{ request.url_for('web_monitor_delete', monitor_id=monitor.id) }}" onsubmit="return confirm('Удалить этот монитор?');">
+      <button type="submit" class="btn btn-danger">Удалить</button>
+    </form>
+  </div>
+</section>
+
+{% if request.query_params.get('queued') %}
+  <div class="notice">Задача проверки добавлена в очередь.</div>
+{% endif %}
+
+<section class="monitor-metrics-grid">
+  <article class="monitor-metric">
+    <h3>Статус</h3>
+    <p>{{ monitor_status_label(monitor.last_status) }}</p>
+  </article>
+  <article class="monitor-metric">
+    <h3>Последняя проверка</h3>
+    <p>{{ format_moscow_datetime(monitor.last_checked_at) }}</p>
+  </article>
+  <article class="monitor-metric">
+    <h3>Последнее изменение</h3>
+    <p>
+      {% if monitor.last_change_percent is not none %}
+        {{ '%.2f'|format(monitor.last_change_percent) }}%
+      {% else %}
+        Базовый скриншот
+      {% endif %}
+    </p>
+  </article>
+</section>
+
+<div class="monitor-media-grid">
+  <section class="card media-card">
+    <div class="media-card-header">
+      <h2>Последний скриншот</h2>
+      <p>Текущее состояние страницы</p>
+    </div>
+    {% if latest_screenshot and latest_screenshot.status == 'успешно' and latest_screenshot.file_path %}
+      <a class="media-link" href="/storage/{{ latest_screenshot.file_path }}" target="_blank" rel="noreferrer">Открыть исходный файл</a>
+      <img src="/storage/{{ latest_screenshot.file_path }}" alt="Последний скриншот" class="preview" />
+    {% elif latest_screenshot and latest_screenshot.status == 'ошибка' %}
+      <p class="error-text">Последняя проверка завершилась ошибкой: {{ latest_screenshot.error_message }}</p>
+    {% else %}
+      <p>Скриншотов пока нет.</p>
+    {% endif %}
+  </section>
+
+  <section class="card media-card">
+    <div class="media-card-header">
+      <h2>Последнее визуальное сравнение</h2>
+      <p>Изменение:
+        {% if latest_diff %}
+          {{ '%.2f'|format(latest_diff.hybrid_change_percent) }}%
+        {% else %}
+          —
+        {% endif %}
+      </p>
+    </div>
+    {% if latest_diff %}
+      <p class="meta">
+        Визуально: {{ '%.2f'|format(latest_diff.change_percent) }}%
+        · Текст: {% if latest_diff.text_change_percent is not none %}{{ '%.2f'|format(latest_diff.text_change_percent) }}%{% else %}—{% endif %}
+        · DOM: {% if latest_diff.dom_changed %}изменён{% else %}без изменений{% endif %}
+      </p>
+    {% endif %}
+    {% if latest_diff %}
+      <a class="media-link" href="/storage/{{ latest_diff.diff_file_path }}" target="_blank" rel="noreferrer">Открыть файл сравнения</a>
+      <img src="/storage/{{ latest_diff.diff_file_path }}" alt="Последнее визуальное сравнение" class="preview" />
+    {% else %}
+      <p>Сравнений пока нет. Первый успешный скриншот используется как базовый.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card monitor-history-card">
+  <h2>История проверок сравнения</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Гибрид %</th>
+          <th>Визуально %</th>
+          <th>Текст %</th>
+          <th>DOM</th>
+          <th>Изменённые пиксели</th>
+          <th>Всего пикселей</th>
+          <th>Файл сравнения</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for diff in diff_history %}
+        <tr>
+          <td>{{ format_moscow_datetime(diff.created_at) }}</td>
+          <td>{{ '%.2f'|format(diff.hybrid_change_percent) }}</td>
+          <td>{{ '%.2f'|format(diff.change_percent) }}</td>
+          <td>{% if diff.text_change_percent is not none %}{{ '%.2f'|format(diff.text_change_percent) }}{% else %}-{% endif %}</td>
+          <td>{% if diff.dom_changed %}Да{% else %}Нет{% endif %}</td>
+          <td>{{ diff.changed_pixels_count }}</td>
+          <td>{{ diff.total_pixels_count }}</td>
+          <td><a href="/storage/{{ diff.diff_file_path }}" target="_blank" rel="noreferrer">Открыть</a></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="empty">Проверок сравнения пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card monitor-history-card">
+  <h2>История скриншотов</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Статус</th>
+          <th>HTTP статус</th>
+          <th>Разрешение</th>
+          <th>Файл</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shot in screenshot_history %}
+        <tr>
+          <td>{{ format_moscow_datetime(shot.created_at) }}</td>
+          <td>{{ screenshot_status_label(shot.status) }}</td>
+          <td>{{ shot.http_status or '-' }}</td>
+          <td>{% if shot.width and shot.height %}{{ shot.width }}x{{ shot.height }}{% else %}-{% endif %}</td>
+          <td>
+            {% if shot.file_path %}
+              <a href="/storage/{{ shot.file_path }}" target="_blank" rel="noreferrer">Открыть</a>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="empty">Скриншотов пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
